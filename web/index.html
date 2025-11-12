@@ -1,0 +1,111 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Tutor IA — Voz a Voz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px;max-width:780px}
+    button{padding:10px 14px;margin-right:8px;border-radius:10px;border:1px solid #ccc;cursor:pointer}
+    #transcript,#answer{white-space:pre-wrap;border:1px solid #eee;padding:10px;border-radius:8px;background:#fafafa}
+    .row{margin:12px 0}
+  </style>
+</head>
+<body>
+  <h1>🎙️ Tutor IA — Voz a Voz</h1>
+
+  <div class="row">
+    <button id="recBtn">🎤 Empezar a hablar</button>
+    <button id="stopBtn" disabled>⏹️ Detener</button>
+  </div>
+
+  <div class="row"><strong>Pregunta (texto):</strong></div>
+  <div class="row"><textarea id="question" rows="3" style="width:100%;"></textarea></div>
+  <div class="row">
+    <button id="sendBtn">➤ Enviar al tutor</button>
+  </div>
+
+  <div class="row"><strong>Transcripción:</strong></div>
+  <div id="transcript" class="row"></div>
+
+  <div class="row"><strong>Respuesta:</strong></div>
+  <div id="answer" class="row"></div>
+
+  <div class="row"><strong>Audio:</strong></div>
+  <audio id="audio" controls></audio>
+
+<script>
+const API = "http://localhost:8000/ask";
+const recBtn = document.getElementById('recBtn');
+const stopBtn = document.getElementById('stopBtn');
+const sendBtn = document.getElementById('sendBtn');
+const transcriptDiv = document.getElementById('transcript');
+const answerDiv = document.getElementById('answer');
+const audioEl = document.getElementById('audio');
+const questionEl = document.getElementById('question');
+
+let recognition = null;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'es-ES';
+  recognition.interimResults = true;
+  recognition.continuous = true;
+  recognition.onresult = (e) => {
+    let text = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      text += e.results[i][0].transcript;
+    }
+    transcriptDiv.textContent = text;
+    questionEl.value = text;
+  };
+  recognition.onerror = (e) => console.error('ASR error', e);
+} else {
+  transcriptDiv.textContent = 'Tu navegador no soporta reconocimiento de voz (Web Speech API). Escribe la pregunta y pulsa Enviar.';
+  recBtn.disabled = true;
+}
+
+recBtn.onclick = () => {
+  if (recognition) {
+    recognition.start();
+    recBtn.disabled = true;
+    stopBtn.disabled = false;
+    transcriptDiv.textContent = 'Escuchando...';
+  }
+};
+
+stopBtn.onclick = () => {
+  if (recognition) recognition.stop();
+  recBtn.disabled = false;
+  stopBtn.disabled = true;
+};
+
+sendBtn.onclick = async () => {
+  const q = questionEl.value.trim();
+  if (!q) { alert('Escribe o dicta una pregunta.'); return; }
+  answerDiv.textContent = 'Pensando...';
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, voice_mode: true })
+    });
+    const data = await r.json();
+    answerDiv.textContent = (data.answer_short || '') + '\n' + (data.explanation || '');
+    if (data.audio_base64) {
+      // Convertir base64 a Blob WAV y reproducir
+      const byteChars = atob(data.audio_base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'audio/wav' });
+      audioEl.src = URL.createObjectURL(blob);
+      audioEl.play().catch(()=>{ /* autoplay puede requerir interacción */ });
+    }
+  } catch (e) {
+    answerDiv.textContent = 'Error llamando a la API: ' + e;
+  }
+};
+</script>
+</body>
+</html>

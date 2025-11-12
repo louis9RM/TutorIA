@@ -1,0 +1,22 @@
+﻿# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+.env
+.venv/
+
+# Modelos y data temporal
+data/*
+!data/README.md
+
+# Docker
+*.log
+*.pid
+*.sock
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db

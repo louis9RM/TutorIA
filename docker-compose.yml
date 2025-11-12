@@ -1,0 +1,25 @@
+﻿services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+
+  tutor-ia:
+    build: .
+    container_name: tutor-ia
+    env_file:
+      - .env
+    depends_on:
+      - ollama
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  ollama_models:
