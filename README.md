@@ -201,6 +201,17 @@ El sistema indexará automáticamente tus documentos para usarlos como contexto.
 | 🔇 *No hay voz* | Navegador bloquea audio | Permite micrófono y altavoz en el navegador |
 
 ---
+# 1️⃣ LEVANTAR OLLAMA CON GPU
+docker run -d --gpus all --name ollama -p 11434:11434 ollama/ollama:latest
+
+# Cargar modelo
+docker exec -it ollama ollama pull llama3.1
+
+# 2️⃣ LEVANTAR BACKEND TUTORIA
+cd TutorIA
+docker build -t tutoria .
+docker run -d --name tutor-ia -p 8000:8000 --env-file .env --link ollama:tutoria-ollama tutoria
+---
 
 ## 🤝 Contribuciones
 
@@ -213,7 +224,7 @@ Puedes abrir un **issue** o enviar un **pull request** con mejoras, nuevos model
 
 **EVER DEV**  
 Desarrollador de soluciones educativas con IA  
-💬 [LinkedIn](https://www.linkedin.com) | 🐙 [GitHub](https://github.com/everdev)
+💬 [LinkedIn](linkedin.com/in/lino-ever-ramos-maiz-950578387) 
 
 ---
 
